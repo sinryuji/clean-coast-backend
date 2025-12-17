@@ -1,10 +1,14 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, date
+from sqlalchemy.orm import Session
 from fetch import fetchers
 from enum import Enum
 import numpy as np
 from core.predict import predict_by_vector
+from core.database import get_db
+from models.beach_prediction import BeachPrediction
+from models.beach import Beach
 import os
 
 router = APIRouter(
@@ -41,22 +45,6 @@ class BeachPredictionResponse(BaseModel):
     location: Location
     prediction: Prediction
     status: TrashStatus
-
-
-# 제주도 주요 해변 위치 정보
-BEACHES = [
-    {"name": "AEWOL", "latitude": 33.44639, "longitude": 126.29343, "description": "애월해안(곽지과물해변)"},
-    {"name": "JOCHEON", "latitude": 33.54323, "longitude": 126.66986, "description": "조천해안(함덕해수욕장)"},
-    {"name": "YERAE", "latitude": 33.22843, "longitude": 126.47737, "description": "예래해안(강정크루즈터미널)"},
-    {"name": "HALLIM", "latitude": 33.39511, "longitude": 126.24028, "description": "한림해안(협재해수욕장)"},
-    {"name": "SEONGSAN", "latitude": 33.47330, "longitude": 126.93454, "description": "성산해안(성산항)"},
-    {"name": "JUNGMUN", "latitude": 33.24421, "longitude": 126.41406, "description": "중문해안(중문색달해수욕장)"},
-    {"name": "GUJWA", "latitude": 33.55565, "longitude": 126.79566, "description": "구좌해안(월정리해변)"},
-    {"name": "PYOSEON", "latitude": 33.32585, "longitude": 126.84252, "description": "표선해안(표선해비치해변)"},
-    {"name": "ANDEOK", "latitude": 33.23000, "longitude": 126.29500, "description": "안덕해안(사계해변)"},
-    {"name": "NAMWON", "latitude": 33.27262, "longitude": 126.66034, "description": "남원해안(위미항)"},
-    {"name": "DAEJEONG", "latitude": 33.21641, "longitude": 126.25031, "description": "대정해안(모슬포항)"}
-]
 
 
 def calculate_trash_prediction(date_obj: datetime, latitude: float, longitude: float) -> tuple[float, TrashStatus]:
@@ -172,43 +160,115 @@ async def get_prediction(
 
 
 @router.get("/beach", response_model=list[BeachPredictionResponse])
-async def get_beach_predictions():
+async def get_beach_predictions(
+    prediction_date: str = Query(
+        None,
+        description="예측 날짜 (YYYY-MM-DD 형식). 미지정시 오늘 날짜 사용",
+        example="2024-01-15"
+    ),
+    db: Session = Depends(get_db)
+):
     """
     제주도 주요 해변의 쓰레기 양 예측 데이터를 조회합니다.
     
-    11개 해변의 현재 시점 기준 쓰레기 예측량을 반환합니다.
+    11개 해변의 지정된 날짜 기준 쓰레기 예측량을 반환합니다.
+    DB에 해당 날짜 데이터가 있으면 DB에서 조회하고, 없으면 API 호출 후 저장합니다.
+    
+    - **prediction_date**: 예측 날짜 (YYYY-MM-DD 형식, 선택 사항. 미지정시 오늘 날짜)
     """
     try:
-        # 현재 날짜 및 시간 사용
-        date_obj = datetime.now()
+        # 날짜 파싱
+        if prediction_date:
+            try:
+                target_date = datetime.strptime(prediction_date, "%Y-%m-%d").date()
+                date_obj = datetime.strptime(prediction_date, "%Y-%m-%d")
+            except ValueError:
+                raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다 (YYYY-MM-DD 형식 필요)")
+        else:
+            target_date = date.today()
+            date_obj = datetime.now()
+        
+        # DB에서 모든 해변 정보 조회
+        beaches = db.query(Beach).all()
+        if not beaches:
+            raise Exception("DB에 해변 정보가 없습니다. init_db.py를 실행하여 초기 데이터를 생성하세요.")
+        
+        # DB에서 지정된 날짜의 모든 해변 데이터 조회
+        cached_predictions = db.query(BeachPrediction).filter(
+            BeachPrediction.prediction_date == target_date
+        ).all()
+        
+        # DB에 모든 해변 데이터가 있는지 확인
+        cached_beach_names = {pred.beach_name for pred in cached_predictions}
+        all_beach_names = {beach.name for beach in beaches}
         
         results = []
         
-        for beach in BEACHES:
-            try:
-                latitude = beach["latitude"]
-                longitude = beach["longitude"]
-                
-                # 쓰레기 양 예측
-                trash_amount, status = calculate_trash_prediction(date_obj, latitude, longitude)
-                
+        # DB에 모든 데이터가 있으면 DB에서 반환
+        if cached_beach_names == all_beach_names:
+            print(f"DB에서 {target_date} 날짜 데이터 조회")
+            for pred in cached_predictions:
                 results.append(BeachPredictionResponse(
-                    name=beach["name"],
-                    date=date_obj.strftime("%Y-%m-%d"),
+                    name=pred.beach_name,
+                    date=pred.prediction_date.strftime("%Y-%m-%d"),
                     location=Location(
-                        latitude=latitude,
-                        longitude=longitude
+                        latitude=pred.latitude,
+                        longitude=pred.longitude
                     ),
                     prediction=Prediction(
-                        trash_amount=trash_amount
+                        trash_amount=pred.trash_amount
                     ),
-                    status=status
+                    status=TrashStatus(pred.status)
                 ))
-                
-            except Exception as beach_error:
-                # 개별 해변 에러는 로깅만 하고 계속 진행
-                print(f"해변 {beach['name']} 예측 실패: {str(beach_error)}")
-                continue
+        else:
+            # DB에 데이터가 없거나 불완전하면 API 호출 후 저장
+            print(f"API 호출하여 {target_date} 날짜 데이터 생성")
+            
+            # 기존 날짜 데이터 삭제 (불완전한 데이터 방지)
+            db.query(BeachPrediction).filter(
+                BeachPrediction.prediction_date == target_date
+            ).delete()
+            
+            for beach in beaches:
+                try:
+                    latitude = beach.latitude
+                    longitude = beach.longitude
+                    
+                    # 쓰레기 양 예측
+                    trash_amount, status = calculate_trash_prediction(date_obj, latitude, longitude)
+                    
+                    # DB에 저장
+                    beach_prediction = BeachPrediction(
+                        beach_name=beach.name,
+                        prediction_date=target_date,
+                        latitude=latitude,
+                        longitude=longitude,
+                        trash_amount=trash_amount,
+                        status=status.value
+                    )
+                    db.add(beach_prediction)
+                    
+                    # 결과 리스트에 추가
+                    results.append(BeachPredictionResponse(
+                        name=beach.name,
+                        date=target_date.strftime("%Y-%m-%d"),
+                        location=Location(
+                            latitude=latitude,
+                            longitude=longitude
+                        ),
+                        prediction=Prediction(
+                            trash_amount=trash_amount
+                        ),
+                        status=status
+                    ))
+                    
+                except Exception as beach_error:
+                    # 개별 해변 에러는 로깅만 하고 계속 진행
+                    print(f"해변 {beach.name} 예측 실패: {str(beach_error)}")
+                    continue
+            
+            # DB에 커밋
+            db.commit()
         
         if not results:
             raise Exception("모든 해변 예측에 실패했습니다")
@@ -216,4 +276,5 @@ async def get_beach_predictions():
         return results
         
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
