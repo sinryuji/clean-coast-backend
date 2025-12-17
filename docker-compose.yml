@@ -1,0 +1,9 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: tangyuling-mysql
+    ports:
+      - "13306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tangyuling

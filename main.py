@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from api.routes import trash
+from api.routes import trash, user
 
 app = FastAPI(
     title="Tangyuling API",
@@ -9,6 +9,7 @@ app = FastAPI(
 
 # 라우터 등록
 app.include_router(trash.router, prefix="/api")
+app.include_router(user.router, prefix="/api")
 
 
 @app.get("/")
