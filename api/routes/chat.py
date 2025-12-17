@@ -4,6 +4,7 @@ from typing import List, Optional
 import os
 import requests
 from dotenv import load_dotenv
+from langchain_core.runnables import RunnableLambda
 
 load_dotenv()
 
@@ -68,6 +69,13 @@ def alan_question(content: str) -> str:
         raise Exception(f"Alan AI API 오류 ({response.status_code}): {response.text}")
 
 
+# LangChain RunnableLambda로 Alan AI 호출을 감싸기
+alan_ai_runnable = RunnableLambda(alan_question)
+
+# Chain 구성: 입력 메시지를 받아서 Alan AI로 전달
+chat_chain = alan_ai_runnable
+
+
 def get_or_create_memory(session_id: str) -> List[ChatMessage]:
     """세션별 메모리 가져오기 또는 생성"""
     if session_id not in chat_memories:
@@ -90,8 +98,8 @@ async def chat(request: ChatRequest):
         # 사용자 메시지 저장
         memory.append(ChatMessage(role="user", content=request.message))
         
-        # Alan AI API 호출
-        response_text = alan_question(request.message)
+        # LangChain을 통한 Alan AI API 호출
+        response_text = chat_chain.invoke(request.message)
         
         # 어시스턴트 응답 저장
         memory.append(ChatMessage(role="assistant", content=response_text))
