@@ -87,9 +87,7 @@ def create_initial_users():
             {"name": "JUNGMUN", "latitude": 33.24421, "longitude": 126.41406, "description": "중문해안(중문색달해수욕장)"},
             {"name": "GUJWA", "latitude": 33.55565, "longitude": 126.79566, "description": "구좌해안(월정리해변)"},
             {"name": "PYOSEON", "latitude": 33.32585, "longitude": 126.84252, "description": "표선해안(표선해비치해변)"},
-            {"name": "ANDEOK", "latitude": 33.23000, "longitude": 126.29500, "description": "안덕해안(사계해변)"},
             {"name": "NAMWON", "latitude": 33.27262, "longitude": 126.66034, "description": "남원해안(위미항)"},
-            {"name": "DAEJEONG", "latitude": 33.21641, "longitude": 126.25031, "description": "대정해안(모슬포항)"}
         ]
         
         existing_beaches = db.query(Beach).count()
