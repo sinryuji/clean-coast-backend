@@ -96,7 +96,7 @@ def calculate_trash_prediction(date_obj: datetime, latitude: float, longitude: f
     )
     
     # status 결정
-    if trash_amount < 100:
+    if trash_amount < 200:
         status = TrashStatus.LOW
     elif trash_amount < 300:
         status = TrashStatus.MEDIUM

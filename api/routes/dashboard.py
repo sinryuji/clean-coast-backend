@@ -69,9 +69,9 @@ class DashboardResponse(BaseModel):
 
 def calculate_risk_level(trash_amount: float) -> RiskLevel:
     """쓰레기 양에 따른 위험도 계산"""
-    if trash_amount >= 400:
+    if trash_amount >= 300:
         return RiskLevel.HIGH
-    elif trash_amount >= 250:
+    elif trash_amount >= 200:
         return RiskLevel.MEDIUM
     else:
         return RiskLevel.LOW
