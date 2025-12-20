@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Response
 from sqlalchemy.orm import Session
 from core.database import get_db
+from core.auth import get_current_user
 from datetime import date
 from io import BytesIO
 from pydantic import BaseModel
@@ -485,10 +486,13 @@ def create_pdf_report(dashboard_data, buffer, organization_name="해양환경공
 @router.post("/monthly")
 async def generate_monthly_report(
     request: ReportRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """
     월간 해양쓰레기 예측 보고서 PDF 생성
+    
+    **인증 필요**: Authorization 헤더에 Bearer 토큰 필요
     
     대시보드 데이터를 기반으로 PDF 형식의 월간 보고서를 생성합니다.
     

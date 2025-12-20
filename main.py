@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from api.routes import trash, user, chat, dashboard, report
 from utils.scheduler import start_scheduler, stop_scheduler
@@ -19,6 +20,15 @@ app = FastAPI(
     description="해류 및 기상 데이터 API",
     version="1.0.0",
     lifespan=lifespan
+)
+
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # 라우터 등록

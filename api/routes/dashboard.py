@@ -4,9 +4,11 @@ from datetime import datetime, date, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
 from core.database import get_db
+from core.auth import get_current_user
 from models.beach_prediction import BeachPrediction
 from models.beach import Beach
 from models.coastal_visitor_stats import CoastalVisitorStats
+from models.user import User
 from typing import List
 from enum import Enum
 
@@ -90,9 +92,14 @@ def calculate_action_type(trash_amount: float) -> ActionType:
 
 
 @router.get("", response_model=DashboardResponse)
-async def get_dashboard(db: Session = Depends(get_db)):
+async def get_dashboard(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """
     행정 대시보드 데이터를 조회합니다.
+    
+    **인증 필요**: Authorization 헤더에 Bearer 토큰 필요
     
     현재 월 기준으로:
     - 월간 요약 통계 (총 예상 유입량, 전월 대비, 위험 지역 현황 등)

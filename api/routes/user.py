@@ -77,8 +77,20 @@ def create_access_token(data: dict) -> str:
 
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
-    """JWT 토큰 검signup", response_model=UserInfo)
+    """JWT 토큰 검증"""
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="토큰이 만료되었습니다")
+    except jwt.JWTError:
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다")
+
+
+@router.post("/signup", response_model=UserInfo)
 async def signup(request: SignupRequest, db: Session = Depends(get_db)):
+    """
     사용자 회원가입
     
     - **username**: 사용자 아이디 (고유)
