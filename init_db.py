@@ -80,15 +80,15 @@ def create_initial_users():
         # 해변 데이터 생성
         print("\n제주도 해변 데이터 확인 중...")
         beaches_data = [
-            {"name": "AEWOL", "latitude": 33.44639, "longitude": 126.29343, "description": "애월해안(곽지과물해변)"},
-            {"name": "JOCHEON", "latitude": 33.54323, "longitude": 126.66986, "description": "조천해안(함덕해수욕장)"},
-            {"name": "YERAE", "latitude": 33.22843, "longitude": 126.47737, "description": "예래해안(강정크루즈터미널)"},
-            {"name": "HALLIM", "latitude": 33.39511, "longitude": 126.24028, "description": "한림해안(협재해수욕장)"},
-            {"name": "SEONGSAN", "latitude": 33.47330, "longitude": 126.93454, "description": "성산해안(성산항)"},
-            {"name": "JUNGMUN", "latitude": 33.24421, "longitude": 126.41406, "description": "중문해안(중문색달해수욕장)"},
-            {"name": "GUJWA", "latitude": 33.55565, "longitude": 126.79566, "description": "구좌해안(월정리해변)"},
-            {"name": "PYOSEON", "latitude": 33.32585, "longitude": 126.84252, "description": "표선해안(표선해비치해변)"},
-            {"name": "NAMWON", "latitude": 33.27262, "longitude": 126.66034, "description": "남원해안(위미항)"},
+            {"name": "애월해안", "longitude": 126.29343, "description": "애월해안(곽지과물해변)"},
+            {"name": "조천해안", "latitude": 33.54323, "longitude": 126.66986, "description": "조천해안(함덕해수욕장)"},
+            {"name": "예래해안", "latitude": 33.22843, "longitude": 126.47737, "description": "예래해안(강정크루즈터미널)"},
+            {"name": "한림해안", "latitude": 33.39511, "longitude": 126.24028, "description": "한림해안(협재해수욕장)"},
+            {"name": "성산해안", "latitude": 33.47330, "longitude": 126.93454, "description": "성산해안(성산항)"},
+            {"name": "중문해안", "latitude": 33.24421, "longitude": 126.41406, "description": "중문해안(중문색달해수욕장)"},
+            {"name": "구좌해안", "latitude": 33.55565, "longitude": 126.79566, "description": "구좌해안(월정리해변)"},
+            {"name": "표선해안", "latitude": 33.32585, "longitude": 126.84252, "description": "표선해안(표선해비치해변)"},
+            {"name": "남원해안", "latitude": 33.27262, "longitude": 126.66034, "description": "남원해안(위미항)"},
         ]
         
         existing_beaches = db.query(Beach).count()
