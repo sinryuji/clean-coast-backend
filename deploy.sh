@@ -7,6 +7,13 @@ set -e
 
 echo "🚀 Tangyuling API 배포 시작..."
 
+# DOCKER_USERNAME 환경 변수 확인
+if [ -z "$DOCKER_USERNAME" ]; then
+    echo "❌ DOCKER_USERNAME 환경 변수가 설정되지 않았습니다."
+    echo "사용법: DOCKER_USERNAME=your-username ./deploy.sh"
+    exit 1
+fi
+
 # Docker Hub 로그인 확인
 if ! docker info > /dev/null 2>&1; then
     echo "❌ Docker가 실행되고 있지 않습니다."
@@ -18,24 +25,24 @@ cd ~/tangyuling
 
 # 최신 이미지 pull
 echo "📥 최신 Docker 이미지 다운로드 중..."
-docker-compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml pull
 
 # 기존 컨테이너 중지
 echo "🛑 기존 컨테이너 중지 중..."
-docker-compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml down
 
 # 새 컨테이너 시작
 echo "▶️  새 컨테이너 시작 중..."
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 
 # 컨테이너 상태 확인
 echo "✅ 컨테이너 상태 확인..."
 sleep 5
-docker-compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml ps
 
 # 로그 확인
 echo "📋 최근 로그 확인..."
-docker-compose -f docker-compose.prod.yml logs --tail=30 api
+docker compose -f docker-compose.prod.yml logs --tail=30 api
 
 # 헬스체크
 echo "🏥 API 헬스체크..."

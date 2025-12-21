@@ -16,105 +16,111 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Extract metadata for Docker
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.DOCKER_IMAGE_NAME }}
-        tags: |
-          type=sha,prefix={{branch}}-
-          type=ref,event=branch
-          type=raw,value=latest,enable={{is_default_branch}}
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE_NAME }}
+          tags: |
+            type=sha,prefix={{branch}}-
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
 
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./Dockerfile
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:buildcache
-        cache-to: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:buildcache,mode=max
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:buildcache,mode=max
 
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup SSH key
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      run: |
-        mkdir -p ~/.ssh
-        echo "$SSH_PRIVATE_KEY" > ~/.ssh/kanghyki
-        chmod 600 ~/.ssh/kanghyki
-        ssh-keyscan -p 4242 hyki.me >> ~/.ssh/known_hosts
+      - name: Setup SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/kanghyki
+          chmod 600 ~/.ssh/kanghyki
+          ssh-keyscan -p 4242 hyki.me >> ~/.ssh/known_hosts
 
-    - name: Copy docker-compose.prod.yml to server
-      run: |
-        scp -P 4242 -i ~/.ssh/kanghyki \
-          docker-compose.prod.yml \
-          blue@hyki.me:~/tangyuling/
+      - name: Copy docker-compose.prod.yml to server
+        run: |
+          scp -P 4242 -i ~/.ssh/kanghyki \
+            docker-compose.prod.yml \
+            blue@hyki.me:~/tangyuling/
 
-    - name: Copy .env file to server
-      run: |
-        echo "${{ secrets.ENV_FILE }}" > .env
-        scp -P 4242 -i ~/.ssh/kanghyki \
-          .env \
-          blue@hyki.me:~/tangyuling/
+      - name: Copy .env file to server
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+          scp -P 4242 -i ~/.ssh/kanghyki \
+            .env \
+            blue@hyki.me:~/tangyuling/
 
-    - name: Deploy to server
-      run: |
-        ssh -p 4242 -i ~/.ssh/kanghyki blue@hyki.me << 'ENDSSH'
-          cd ~/tangyuling
-          
-          # Docker Hub 로그인
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          
-          # 최신 이미지 pull
-          docker-compose -f docker-compose.prod.yml pull
-          
-          # 기존 컨테이너 중지 및 제거
-          docker-compose -f docker-compose.prod.yml down
-          
-          # 새 컨테이너 시작
-          docker-compose -f docker-compose.prod.yml up -d
-          
-          # 사용하지 않는 이미지 정리
-          docker image prune -af
-          
-          # 로그 확인 (최근 50줄)
-          docker-compose -f docker-compose.prod.yml logs --tail=50
-        ENDSSH
+      - name: Deploy to server
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          ssh -p 4242 -i ~/.ssh/kanghyki blue@hyki.me << 'ENDSSH'
+            cd ~/tangyuling
+            
+            # 환경 변수 설정
+            export DOCKER_USERNAME="${{ secrets.DOCKER_USERNAME }}"
+            
+            # Docker Hub 로그인
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            
+            # 최신 이미지 pull
+            docker compose -f docker-compose.prod.yml pull
+            
+            # 기존 컨테이너 중지 및 제거
+            docker compose -f docker-compose.prod.yml down
+            
+            # 새 컨테이너 시작
+            docker compose -f docker-compose.prod.yml up -d
+            
+            # 사용하지 않는 이미지 정리
+            docker image prune -af
+            
+            # 로그 확인 (최근 50줄)
+            docker compose -f docker-compose.prod.yml logs --tail=50
+          ENDSSH
 
-    - name: Verify deployment
-      run: |
-        ssh -p 4242 -i ~/.ssh/kanghyki blue@hyki.me << 'ENDSSH'
-          cd ~/tangyuling
-          docker-compose -f docker-compose.prod.yml ps
-        ENDSSH
+      - name: Verify deployment
+        run: |
+          ssh -p 4242 -i ~/.ssh/kanghyki blue@hyki.me << 'ENDSSH'
+            cd ~/tangyuling
+            docker-compose -f docker-compose.prod.yml ps
+          ENDSSH
 
-    - name: Cleanup
-      if: always()
-      run: |
-        rm -f ~/.ssh/kanghyki
-        rm -f .env
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/kanghyki
+          rm -f .env

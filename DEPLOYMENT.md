@@ -3,6 +3,7 @@
 ## 📋 사전 준비
 
 ### 1. Docker Hub 계정
+
 - [Docker Hub](https://hub.docker.com/) 가입
 - Repository 생성: `your-username/tangyuling-api`
 
@@ -12,14 +13,15 @@ GitHub 저장소 → Settings → Secrets and variables → Actions에서 다음
 
 #### 필수 Secrets
 
-| Secret 이름 | 설명 | 예시 |
-|------------|------|------|
-| `DOCKER_USERNAME` | Docker Hub 사용자 이름 | `myusername` |
-| `DOCKER_PASSWORD` | Docker Hub 액세스 토큰 | `dckr_pat_xxxxx` |
-| `SSH_PRIVATE_KEY` | 서버 접속용 SSH 개인키 | `~/.ssh/kanghyki` 파일 내용 |
-| `ENV_FILE` | 프로덕션 환경변수 | `.env.example` 참고하여 작성 |
+| Secret 이름       | 설명                   | 예시                         |
+| ----------------- | ---------------------- | ---------------------------- |
+| `DOCKER_USERNAME` | Docker Hub 사용자 이름 | `myusername`                 |
+| `DOCKER_PASSWORD` | Docker Hub 액세스 토큰 | `dckr_pat_xxxxx`             |
+| `SSH_PRIVATE_KEY` | 서버 접속용 SSH 개인키 | `~/.ssh/kanghyki` 파일 내용  |
+| `ENV_FILE`        | 프로덕션 환경변수      | `.env.example` 참고하여 작성 |
 
 #### ENV_FILE 예시
+
 ```env
 DATABASE_URL=mysql+pymysql://root:your_password@mysql:3306/tangyuling
 MYSQL_ROOT_PASSWORD=your_secure_password
@@ -62,6 +64,7 @@ touch .env
 ### 자동 배포 (CI/CD)
 
 1. **코드 푸시**
+
    ```bash
    git add .
    git commit -m "feat: 새로운 기능 추가"
@@ -69,6 +72,7 @@ touch .env
    ```
 
 2. **GitHub Actions 자동 실행**
+
    - Docker 이미지 빌드
    - Docker Hub에 푸시
    - 서버에 SSH 접속
@@ -96,6 +100,7 @@ docker-compose -f docker-compose.prod.yml up -d
 ## 🔍 모니터링 및 관리
 
 ### 로그 확인
+
 ```bash
 # 실시간 로그
 docker-compose -f docker-compose.prod.yml logs -f api
@@ -105,21 +110,25 @@ docker-compose -f docker-compose.prod.yml logs --tail=100 api
 ```
 
 ### 컨테이너 상태 확인
+
 ```bash
 docker-compose -f docker-compose.prod.yml ps
 ```
 
 ### 컨테이너 재시작
+
 ```bash
 docker-compose -f docker-compose.prod.yml restart api
 ```
 
 ### 데이터베이스 접속
+
 ```bash
 docker-compose -f docker-compose.prod.yml exec mysql mysql -uroot -p
 ```
 
 ### 백업
+
 ```bash
 # 데이터베이스 백업
 docker-compose -f docker-compose.prod.yml exec mysql mysqldump -uroot -p tangyuling > backup_$(date +%Y%m%d).sql
@@ -133,10 +142,12 @@ docker run --rm -v tangyuling_mysql_data:/data -v $(pwd):/backup ubuntu tar czf 
 ### 배포 실패 시
 
 1. **GitHub Actions 로그 확인**
+
    - Actions 탭에서 실패한 워크플로우 클릭
    - 에러 메시지 확인
 
 2. **서버 로그 확인**
+
    ```bash
    ssh -p 4242 blue@hyki.me
    cd ~/tangyuling
@@ -162,14 +173,17 @@ docker-compose -f docker-compose.prod.yml up -d
 ## 📝 주의사항
 
 1. **민감 정보 보안**
+
    - `.env` 파일은 절대 Git에 커밋하지 마세요
    - GitHub Secrets에만 저장하세요
 
 2. **데이터베이스 백업**
+
    - 정기적으로 데이터베이스 백업을 수행하세요
    - 중요한 변경 전에는 반드시 백업하세요
 
 3. **포트 설정**
+
    - 프로덕션에서는 8000번 포트 대신 Nginx 리버스 프록시 사용 권장
    - SSL/TLS 인증서 설정 권장
 
@@ -180,14 +194,17 @@ docker-compose -f docker-compose.prod.yml up -d
 ## 🔐 보안 권장사항
 
 1. **SSH 키 관리**
+
    - 개인키는 안전하게 보관
    - 정기적으로 키 교체
 
 2. **Docker Hub 토큰**
+
    - 비밀번호 대신 액세스 토큰 사용
    - 최소 권한 원칙 적용
 
 3. **방화벽 설정**
+
    ```bash
    sudo ufw allow 22/tcp    # SSH
    sudo ufw allow 4242/tcp  # 커스텀 SSH
