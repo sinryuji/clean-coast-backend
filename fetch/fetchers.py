@@ -8,7 +8,6 @@ from utils import location
 load_dotenv()
 
 def fetch_current(date: datetime, lat: float, lot: float):
-    # base_url = "http://www.khoa.go.kr/api/oceangrid/tidalCurrentArea/search.do"
     base_url = os.environ.get('CURRENT_API_URL')
 
     target_date = date.strftime("%Y%m%d")
@@ -33,6 +32,7 @@ def fetch_current(date: datetime, lat: float, lot: float):
     }
 
     response = requests.get(base_url, params=params)
+    print(response.url)
 
     if response.status_code != 200:
         raise Exception(f"API 요청 실패: {response.status_code}")
@@ -70,7 +70,6 @@ def fetch_current(date: datetime, lat: float, lot: float):
     return float(closest_data['current_dir']), float(closest_data['current_speed'])
 
 def fetch_wind(lat: float, lot: float):
-    # base_url = "https://apis.data.go.kr/1192136/surveyWind/GetSurveyWindApiService"
     base_url = os.environ.get('WIND_API_URL')
 
     nearest = location.find_nearest_location(lat, lot)
@@ -84,6 +83,7 @@ def fetch_wind(lat: float, lot: float):
     }
 
     response = requests.get(base_url, params=params)
+    print(response.url)
 
     if response.status_code != 200:
         raise Exception(f"API 요청 실패: {response.status_code}")
