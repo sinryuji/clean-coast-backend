@@ -61,7 +61,7 @@ def calculate_trash_prediction(date_obj: datetime, latitude: float, longitude: f
     """
     # 해류 및 풍속 데이터 가져오기
     current_dir, current_speed = fetchers.fetch_current(date_obj, latitude, longitude)
-    wind_dir, wind_speed = fetchers.fetch_wind(latitude, longitude)
+    wind_dir, wind_speed = fetchers.fetch_wind(date_obj, latitude, longitude)
 
     # 벡터 계산
     rad = np.deg2rad(current_dir)

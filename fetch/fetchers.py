@@ -32,7 +32,6 @@ def fetch_current(date: datetime, lat: float, lot: float):
     }
 
     response = requests.get(base_url, params=params)
-    print(response.url)
 
     if response.status_code != 200:
         raise Exception(f"API 요청 실패: {response.status_code}")
@@ -69,21 +68,24 @@ def fetch_current(date: datetime, lat: float, lot: float):
 
     return float(closest_data['current_dir']), float(closest_data['current_speed'])
 
-def fetch_wind(lat: float, lot: float):
+def fetch_wind(date: datetime, lat: float, lot: float):
     base_url = os.environ.get('WIND_API_URL')
 
     nearest = location.find_nearest_location(lat, lot)
+    
+    # 날짜를 YYYYMMDD 형식으로 변환
+    req_date = date.strftime("%Y%m%d")
 
     params = {
         "serviceKey": os.environ.get('WIND_API_KEY'),
         "obsCode": nearest.code,
+        "reqDate": req_date,
         "min": 60,
         "numOfRows": 300,
         "type": "json"
     }
 
     response = requests.get(base_url, params=params)
-    print(response.url)
 
     if response.status_code != 200:
         raise Exception(f"API 요청 실패: {response.status_code}")
