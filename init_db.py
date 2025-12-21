@@ -80,7 +80,7 @@ def create_initial_users():
         # 해변 데이터 생성
         print("\n제주도 해변 데이터 확인 중...")
         beaches_data = [
-            {"name": "애월해안", "longitude": 126.29343, "description": "애월해안(곽지과물해변)"},
+            {"name": "애월해안", "latitude": 33.46129, "longitude": 126.29343, "description": "애월해안(곽지과물해변)"},
             {"name": "조천해안", "latitude": 33.54323, "longitude": 126.66986, "description": "조천해안(함덕해수욕장)"},
             {"name": "예래해안", "latitude": 33.22843, "longitude": 126.47737, "description": "예래해안(강정크루즈터미널)"},
             {"name": "한림해안", "latitude": 33.39511, "longitude": 126.24028, "description": "한림해안(협재해수욕장)"},
