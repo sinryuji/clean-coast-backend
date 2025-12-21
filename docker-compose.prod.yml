@@ -12,6 +12,7 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - tangyuling-network
+      - proxy-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -43,3 +44,6 @@ volumes:
 networks:
   tangyuling-network:
     driver: bridge
+  proxy-network:
+    name: proxy-network
+    external: true
