@@ -3,6 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from api.routes import trash, user, chat, dashboard, report
 from utils.scheduler import start_scheduler, stop_scheduler
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 @asynccontextmanager
@@ -23,9 +27,12 @@ app = FastAPI(
 )
 
 # CORS 설정
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000")
+allowed_origins = [origin.strip() for origin in CORS_ORIGINS.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
