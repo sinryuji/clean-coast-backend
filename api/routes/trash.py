@@ -45,6 +45,7 @@ class BeachPredictionResponse(BaseModel):
     location: Location
     prediction: Prediction
     status: TrashStatus
+    temperature: float
 
 
 def calculate_trash_prediction(date_obj: datetime, latitude: float, longitude: float) -> tuple[float, TrashStatus]:
@@ -218,7 +219,8 @@ async def get_beach_predictions(
                     prediction=Prediction(
                         trash_amount=pred.trash_amount
                     ),
-                    status=TrashStatus(pred.status)
+                    status=TrashStatus(pred.status),
+                    temperature=pred.temperature if pred.temperature else 0.0
                 ))
         else:
             # DB에 데이터가 없거나 불완전하면 API 호출 후 저장
@@ -237,6 +239,13 @@ async def get_beach_predictions(
                     # 쓰레기 양 예측
                     trash_amount, status = calculate_trash_prediction(date_obj, latitude, longitude)
                     
+                    # 수온 데이터 가져오기
+                    try:
+                        temperature = fetchers.fetch_temperature(date_obj, latitude, longitude)
+                    except Exception as temp_error:
+                        print(f"수온 데이터 조회 실패 ({beach.name}): {str(temp_error)}")
+                        temperature = None
+                    
                     # DB에 저장
                     beach_prediction = BeachPrediction(
                         beach_name=beach.name,
@@ -244,7 +253,8 @@ async def get_beach_predictions(
                         latitude=latitude,
                         longitude=longitude,
                         trash_amount=trash_amount,
-                        status=status.value
+                        status=status.value,
+                        temperature=temperature
                     )
                     db.add(beach_prediction)
                     
@@ -259,7 +269,8 @@ async def get_beach_predictions(
                         prediction=Prediction(
                             trash_amount=trash_amount
                         ),
-                        status=status
+                        status=status,
+                        temperature=temperature if temperature else 0.0
                     ))
                     
                 except Exception as beach_error:

@@ -13,6 +13,7 @@ class BeachPrediction(Base):
     longitude = Column(Float, nullable=False)
     trash_amount = Column(Float, nullable=False)
     status = Column(String(20), nullable=False)
+    temperature = Column(Float, nullable=True)
     current_dir = Column(Float, nullable=True)
     current_speed = Column(Float, nullable=True)
     wind_dir = Column(Float, nullable=True)

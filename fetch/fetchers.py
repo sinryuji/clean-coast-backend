@@ -80,7 +80,7 @@ def fetch_wind(date: datetime, lat: float, lot: float):
         "serviceKey": os.environ.get('WIND_API_KEY'),
         "obsCode": nearest.code,
         "reqDate": req_date,
-        "min": 60,
+        "min": 30,
         "numOfRows": 300,
         "type": "json"
     }
@@ -125,3 +125,60 @@ def fetch_wind(date: datetime, lat: float, lot: float):
         raise Exception("유효한 데이터가 없습니다")
 
     return total_wind_dir / cnt, total_wind_speed / cnt
+
+def fetch_temperature(date: datetime, lat: float, lot: float):
+    base_url = os.environ.get('TEMPERATURE_API_URL')
+
+    nearest = location.find_nearest_location(lat, lot)
+
+    # 날짜를 YYYYMMDD 형식으로 변환
+    req_date = date.strftime("%Y%m%d")
+
+    params = {
+        "serviceKey": os.environ.get('TEMPERATURE_API_KEY'),
+        "obsCode": nearest.code,
+        "reqDate": req_date,
+        "min": 30,
+        "numOfRows": 300,
+        "type": "json"
+    }
+
+    response = requests.get(base_url, params=params)
+    print(f'response: {response.url}')
+
+    if response.status_code != 200:
+        raise Exception(f"API 요청 실패: {response.status_code}")
+
+    try:
+        data = response.json()
+    except ValueError as e:
+        raise Exception(f"JSON 파싱 실패: {response.text}")
+
+    # header 검증
+    if 'header' not in data:
+        raise Exception("응답 데이터 형식이 올바르지 않습니다")
+    
+    if data['header']['resultCode'] != "00":
+        raise Exception(f"API 오류: {data['header'].get('resultMsg', 'Unknown error')}")
+
+    # body 검증
+    if 'body' not in data or 'items' not in data['body'] or 'item' not in data['body']['items']:
+        raise Exception("응답 데이터 형식이 올바르지 않습니다")
+
+    items = data['body']['items']['item']
+    
+    total_temperature = 0.0
+    cnt = 0
+
+    for item in items:
+        if 'wtem' not in item:
+            continue
+        if item['wtem'] is None:
+            continue
+        total_temperature += float(item['wtem'])
+        cnt += 1
+
+    if cnt == 0:
+        raise Exception("유효한 데이터가 없습니다")
+
+    return total_temperature / cnt
