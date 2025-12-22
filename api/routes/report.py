@@ -213,7 +213,7 @@ def create_pdf_report(dashboard_data, buffer, organization_name="해양환경공
     
     summary_bullets = [
         f"• {month}월 해양쓰레기 유입량 전월 대비 {abs(summary.previous_month_change):.1f}% {change_direction}",
-        f"• 총 예상 유입량: {summary.total_predicted_amount:.0f}kg",
+        f"• 총 예상 유입량: {summary.total_predicted_amount:.0f}개",
         f"• 위험 지역 {summary.high_risk_count}개소, 주의 지역 {summary.medium_risk_count}개소",
         f"• 즉시 조치 필요: {summary.immediate_action_count}개소"
     ]
@@ -281,7 +281,7 @@ def create_pdf_report(dashboard_data, buffer, organization_name="해양환경공
     for area in dashboard_data.risk_areas[:5]:
         risk_table_data.append([
             area.beach_name,
-            f"{area.predicted_amount:.0f}kg",
+            f"{area.predicted_amount:.0f}개",
             area.risk_level.value,
             area.action_required.value
         ])
@@ -460,7 +460,7 @@ def create_pdf_report(dashboard_data, buffer, organization_name="해양환경공
     if dashboard_data.risk_areas:
         top_risk = dashboard_data.risk_areas[0]
         analysis_items.append(
-            f"{top_risk.beach_name} 지역이 {top_risk.predicted_amount:.0f}kg으로 "
+            f"{top_risk.beach_name} 지역이 {top_risk.predicted_amount:.0f}개로 "
             f"가장 높은 유입량이 예상되며, {top_risk.action_required} 조치가 필요합니다."
         )
     
